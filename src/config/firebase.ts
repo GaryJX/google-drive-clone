@@ -22,8 +22,14 @@ if (!firebase.apps.length) {
 
 const app = firebase.app();
 const auth = firebase.auth();
-const db = firebase.firestore();
 const now = firebase.firestore.Timestamp.now();
 const storage = firebase.storage();
 const analytics = firebase.analytics;
+
+const firestore = firebase.firestore();
+const db = {
+	folders: firestore.collection("folders"),
+	files: firestore.collection("files"),
+};
+
 export { app, auth, db, now, storage, analytics };

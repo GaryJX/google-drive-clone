@@ -25,45 +25,8 @@ const useAuthProvider = () => {
 		return () => unsubscribe();
 	}, []);
 
-	useEffect(() => {
-		if (user?.uid) {
-			// Subscribe to the user document on mount
-			const unsubscribe = db
-				.collection("users")
-				.doc(user.uid)
-				.onSnapshot((doc) => setUser(doc.data() as User));
-
-			return () => unsubscribe();
-		}
-	});
-
 	const handleAuthStateChanged = (user: firebase.User | null) => {
 		setUser(user as User | null);
-		if (user) {
-			setUserAdditionalData(user.uid);
-		}
-	};
-
-	const setUserAdditionalData = async (uid: string) => {
-		const userData = await db.collection("users").doc(uid).get();
-		if (userData.data()) {
-			setUser(userData.data() as User);
-		}
-	};
-
-	const createUser = async (user: User) => {
-		const error = await db
-			.collection("users")
-			.doc(user.uid)
-			.set(user)
-			.catch((error) => ({ error }));
-
-		if (error) {
-			return error;
-		} else {
-			setUser(user);
-			return user;
-		}
 	};
 
 	const register = async ({ name, email, password }: RegisterData) => {
@@ -74,7 +37,10 @@ const useAuthProvider = () => {
 			auth.currentUser!.updateProfile({
 				displayName: name,
 			});
-			return createUser({ uid: response.user!.uid, email, name });
+
+			const user = { uid: response.user!.uid, email, name };
+			setUser(user);
+			return user;
 		} catch (error) {
 			return { error };
 		}
@@ -86,7 +52,7 @@ const useAuthProvider = () => {
 			console.log({ response });
 			const { uid, displayName } = response.user!;
 			const user: User = { uid, email, name: displayName! };
-			setUserAdditionalData(uid);
+			setUser(user);
 			return user;
 		} catch (error) {
 			return { error };
