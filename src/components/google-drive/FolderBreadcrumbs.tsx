@@ -13,7 +13,7 @@ const FolderBreadcrumbs: React.FC<FolderBreadcrumbsProps> = ({ currentFolder }) 
 	if (currentFolder) path = [...path, ...currentFolder.path];
 	console.log({ path });
 	return (
-		<Breadcrumb>
+		<Breadcrumb flexGrow={1}>
 			{path.map((folder) => (
 				<BreadcrumbItem key={folder.id}>
 					<Link href={folder.id ? `/folder/${folder.id}` : "/dashboard"}>

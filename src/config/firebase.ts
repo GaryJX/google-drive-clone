@@ -1,7 +1,6 @@
 import firebase from "firebase";
 import "firebase/analytics";
 import "firebase/storage";
-import { Folder } from "hooks/useFolder";
 import config from "./config";
 
 export const firebaseConfig = {

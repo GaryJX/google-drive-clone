@@ -6,22 +6,25 @@ import FolderComponent from "components/google-drive/Folder";
 import { useRouter } from "next/router";
 import FolderBreadcrumbs from "./FolderBreadcrumbs";
 import { useEffect } from "react";
+import AddFileButton from "./AddFileButton";
+import FileComponent from "./File";
 
 const Dashboard = () => {
 	const router = useRouter();
 	const { id } = router.query;
-	const { folder, childFolders } = useFolder((id as string) || null);
+	const { folder, childFolders, childFiles } = useFolder((id as string) || null);
 
 	useEffect(() => {
-		console.log({ folder });
-	}, [folder]);
+		console.log({ childFiles });
+	}, [childFiles]);
 
 	return (
 		<div>
 			<Navbar />
 			<Box>
-				<Box d="flex" alignItems="center" justifyContent="space-between">
+				<Box d="flex" alignItems="center">
 					<FolderBreadcrumbs currentFolder={folder} />
+					<AddFileButton currentFolder={folder} />
 					<AddFolderButton currentFolder={folder} />
 				</Box>
 				{childFolders.length > 0 && (
@@ -29,6 +32,15 @@ const Dashboard = () => {
 					<div>
 						{childFolders.map((childFolder) => (
 							<FolderComponent key={childFolder.id} folder={childFolder} />
+						))}
+					</div>
+				)}
+				{childFolders.length > 0 && childFiles.length > 0 && <hr />}
+				{childFiles.length > 0 && (
+					// TODO: Not sure if this div is necessary
+					<div>
+						{childFiles.map((childFile) => (
+							<FileComponent key={childFile.id} file={childFile} />
 						))}
 					</div>
 				)}

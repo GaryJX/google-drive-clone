@@ -38,6 +38,7 @@ const AddFolderButton: React.FC<AddFolderButtonProps> = ({ currentFolder }) => {
 			const { name, id } = currentFolder;
 			path.push({ name, id });
 		}
+		// TODO: Check if there is already a folder with the same name in the parent folder. If so, don't add this one, and notify user
 		await db.folders.add({
 			name: folderName,
 			parentId: currentFolder.id,

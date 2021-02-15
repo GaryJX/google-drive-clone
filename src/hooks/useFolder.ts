@@ -1,47 +1,54 @@
 import { db } from "config/firebase";
+import { useRouter } from "next/router";
 import { Reducer, useEffect, useReducer } from "react";
 import { useAuth } from "./useAuth";
 
-// TODO: Put this in the types folder
+// TODO: Put Folder and File types in a new types folder
 export type Folder = {
-	name: string;
 	id: string | null;
+	name: string;
 	path: { name: string; id: string | null }[];
+	parentId: string | null;
+	userId?: string;
+	createdAt?: unknown;
+};
+
+export type File = {
+	id: string;
+	name: string;
+	url: string;
+	folderId: string | null;
+	userId?: string;
+	createdAt?: unknown;
 };
 
 type FolderReducer = {
 	folderId: string | null;
 	folder: Folder;
 	childFolders: Folder[];
-	childFiles: string[];
+	childFiles: File[];
 };
 
 enum Actions {
-	SelectFolder,
 	UpdateFolder,
 	SetChildFolders,
+	SetChildFiles,
 }
 
 export const ROOT_FOLDER: Folder = {
-	name: "Root",
 	id: null,
+	name: "Root",
 	path: [],
+	parentId: null,
 };
 
 const reducer: Reducer<FolderReducer, { type: Actions; payload: FolderReducer }> = (state, { type, payload }) => {
-	const { folderId, folder, childFolders } = payload;
+	const { folderId, folder, childFolders, childFiles } = payload;
 	switch (type) {
-		case Actions.SelectFolder: {
-			return {
-				folderId,
-				folder,
-				childFolders: [],
-				childFiles: [],
-			};
-		}
 		case Actions.UpdateFolder: {
 			return {
 				...state,
+				folderId,
 				folder,
 			};
 		}
@@ -51,32 +58,63 @@ const reducer: Reducer<FolderReducer, { type: Actions; payload: FolderReducer }>
 				childFolders,
 			};
 		}
+		case Actions.SetChildFiles: {
+			return {
+				...state,
+				childFiles,
+			};
+		}
 		default: {
 			return state;
 		}
 	}
 };
 
-const useFolder = (folderId: string | null = null, folder: Folder = ROOT_FOLDER) => {
+const useFolder = (folderId: string | null = null) => {
 	const [state, dispatch] = useReducer(reducer, {
 		folderId,
-		folder,
+		folder: ROOT_FOLDER,
 		childFolders: [],
 		childFiles: [],
 	});
 	const { user } = useAuth();
+	const router = useRouter();
 
 	useEffect(() => {
-		dispatch({ type: Actions.SelectFolder, payload: { folderId, folder, childFolders: [], childFiles: [] } });
-	}, [folderId, folder]);
+		if (folderId === null) {
+			// Root Folder
+			return dispatch({
+				type: Actions.UpdateFolder,
+				payload: { ...state, folderId, folder: ROOT_FOLDER },
+			});
+		} else {
+			db.folders
+				.doc(folderId)
+				.get()
+				.then((doc) => {
+					dispatch({
+						type: Actions.UpdateFolder,
+						payload: { ...state, folderId, folder: db.formatDoc(doc) },
+					});
+				})
+				.catch((error) => {
+					// Default to Root Folder
+					console.error(error);
+					router.push("/dashboard");
+					dispatch({
+						type: Actions.UpdateFolder,
+						payload: { ...state, folderId: null, folder: ROOT_FOLDER },
+					});
+				});
+		}
+	}, [folderId]);
 
 	useEffect(() => {
 		if (user) {
-			console.log("YES USER!");
 			return db.folders
 				.where("parentId", "==", folderId)
 				.where("userId", "==", user.uid)
-				.orderBy("createdAt") // TODO: Uncomment this out when it is done building
+				.orderBy("createdAt")
 				.onSnapshot((snapshot) => {
 					dispatch({
 						type: Actions.SetChildFolders,
@@ -90,33 +128,22 @@ const useFolder = (folderId: string | null = null, folder: Folder = ROOT_FOLDER)
 	}, [folderId, user]);
 
 	useEffect(() => {
-		if (folderId === null) {
-			// Root Folder
-			return dispatch({
-				type: Actions.UpdateFolder,
-				payload: { ...state, folder: ROOT_FOLDER },
-			});
-		} else {
-			db.folders
-				.doc(folderId)
-				.get()
-				.then((doc) => {
-					console.log(db.formatDoc(doc));
+		if (user) {
+			return db.files
+				.where("folderId", "==", folderId)
+				.where("userId", "==", user.uid)
+				.orderBy("createdAt")
+				.onSnapshot((snapshot) => {
 					dispatch({
-						type: Actions.UpdateFolder,
-						payload: { ...state, folder: db.formatDoc(doc) },
-					});
-				})
-				.catch((error) => {
-					// Default to Root Folder
-					console.error(error);
-					dispatch({
-						type: Actions.UpdateFolder,
-						payload: { ...state, folder: ROOT_FOLDER },
+						type: Actions.SetChildFiles,
+						payload: {
+							...state,
+							childFiles: snapshot.docs.map(db.formatDoc),
+						},
 					});
 				});
 		}
-	}, [folderId]);
+	}, [folderId, user]);
 
 	return state;
 };
