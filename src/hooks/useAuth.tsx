@@ -25,6 +25,10 @@ const useAuthProvider = () => {
 		return () => unsubscribe();
 	}, []);
 
+	useEffect(() => {
+		console.log({ user });
+	}, [user]);
+
 	const handleAuthStateChanged = (user: firebase.User | null) => {
 		setUser(user as User | null);
 	};

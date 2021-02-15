@@ -13,17 +13,38 @@ import {
 	useDisclosure,
 } from "@chakra-ui/react";
 import { db } from "config/firebase";
+import { useAuth } from "hooks/useAuth";
 import { FormEvent, useRef, useState } from "react";
 import { FaFolderPlus } from "react-icons/fa";
+import { Folder, ROOT_FOLDER } from "hooks/useFolder";
 
-const AddFolderButton = () => {
+type AddFolderButtonProps = {
+	currentFolder: Folder;
+};
+
+const AddFolderButton: React.FC<AddFolderButtonProps> = ({ currentFolder }) => {
 	const { isOpen, onOpen, onClose } = useDisclosure();
 	const [folderName, setFolderName] = useState("");
+	const auth = useAuth();
 	const initialRef = useRef<HTMLInputElement | null>(null);
 
 	const onSubmit = async (e: FormEvent) => {
 		e.preventDefault();
-		await db.folders.add({ name: folderName });
+		if (!currentFolder) return;
+		if (!auth.user) return;
+
+		const path = [...currentFolder.path];
+		if (currentFolder !== ROOT_FOLDER) {
+			const { name, id } = currentFolder;
+			path.push({ name, id });
+		}
+		await db.folders.add({
+			name: folderName,
+			parentId: currentFolder.id,
+			userId: auth.user.uid,
+			path,
+			createdAt: db.getCurrentTimestamp(),
+		});
 		setFolderName("");
 		onClose();
 	};

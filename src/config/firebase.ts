@@ -1,6 +1,7 @@
 import firebase from "firebase";
 import "firebase/analytics";
 import "firebase/storage";
+import { Folder } from "hooks/useFolder";
 import config from "./config";
 
 export const firebaseConfig = {
@@ -27,9 +28,15 @@ const storage = firebase.storage();
 const analytics = firebase.analytics;
 
 const firestore = firebase.firestore();
+// ToDO: Move the db object to its own file
 const db = {
 	folders: firestore.collection("folders"),
 	files: firestore.collection("files"),
+	// TODO: Set the types properly for formatDoc
+	formatDoc: (doc: firebase.firestore.DocumentSnapshot<any>) => {
+		return { id: doc.id, ...doc.data() };
+	},
+	getCurrentTimestamp: firebase.firestore.FieldValue.serverTimestamp,
 };
 
 export { app, auth, db, now, storage, analytics };

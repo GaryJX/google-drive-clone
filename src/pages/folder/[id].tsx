@@ -1,7 +1,7 @@
 import Dashboard from "components/google-drive/Dashboard";
 
-const DashboardPage = () => {
+const FolderPage = () => {
 	return <Dashboard />;
 };
 
-export default DashboardPage;
+export default FolderPage;
